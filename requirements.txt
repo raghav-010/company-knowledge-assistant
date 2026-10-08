@@ -1,0 +1,41 @@
+# ── Core API ──────────────────────────────────────────────────────────────────
+fastapi
+uvicorn
+python-dotenv
+pandas
+tiktoken
+
+# ── Database / connection pool ─────────────────────────────────────────────────
+psycopg[binary,pool]
+
+# ── Document loaders ──────────────────────────────────────────────────────────
+unstructured
+unstructured[pdf]
+unstructured[docx]
+markdown
+pymupdf
+
+# ── LangChain core + integrations ─────────────────────────────────────────────
+langchain
+langchain-community
+langchain-text-splitters
+langchain-postgres
+
+# ── Embeddings: HuggingFace (local, free, no API key needed) ──────────────────
+# Replaces OpenAI text-embedding-3-small.
+# Reason: OpenAI requires international USD card payment (not supported with
+# Indian cards). all-MiniLM-L6-v2 runs inside Docker, 384-dim vectors.
+langchain-huggingface
+sentence-transformers
+
+# ── LLM: Google Gemini (free tier via AI Studio API key) ──────────────────────
+# Replaces GPT-4o-mini. Reason: OpenAI account had zero credits;
+# Gemini free tier works with any Google account, no card needed.
+langchain-google-genai>=2.0.0
+
+# ── Re-ranking ────────────────────────────────────────────────────────────────
+cohere
+langchain-cohere
+
+# ── Evaluation ────────────────────────────────────────────────────────────────
+ragas

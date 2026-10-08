@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lucent</title>
+<style>
+  :root {
+    --bg: #070b16;
+    --card: #0c1224;
+    --card-border: #1a2342;
+    --text: #e8ecf8;
+    --muted: #7f8aa8;
+    --cyan: #12b5d6;
+    --cyan-soft: #0e8da8;
+    --purple: #7c3aed;
+    --purple-soft: #a78bfa;
+    --green: #22c55e;
+    --red: #f87171;
+    --amber: #fbbf24;
+    --font: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+    --mono: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 20px 20px 60px; }
+
+  /* top bar */
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 8px 0 20px; }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 20px; }
+  .logo {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    display: grid; place-items: center; font-size: 18px;
+    box-shadow: 0 6px 20px rgba(124,58,237,.35);
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--card-border); border-radius: 999px;
+    padding: 6px 14px; font-size: 12px; font-weight: 600; letter-spacing: .08em;
+    color: var(--muted); background: rgba(255,255,255,.02);
+  }
+  .badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: block; }
+  .badge.running { color: var(--amber); } .badge.running i { background: var(--amber); animation: pulse 1s infinite; }
+  .badge.ready { color: var(--green); } .badge.ready i { background: var(--green); }
+  .badge.error { color: var(--red); } .badge.error i { background: var(--red); }
+  @keyframes pulse { 50% { opacity: .3; } }
+
+  /* hero */
+  .hero {
+    border: 1px solid #2a2f6b; border-radius: 22px; padding: 40px 36px;
+    background:
+      radial-gradient(120% 140% at 0% 0%, rgba(99,102,241,.28), transparent 60%),
+      radial-gradient(100% 120% at 100% 100%, rgba(124,58,237,.30), transparent 60%),
+      #0e1230;
+  }
+  .hero h1 { margin: 0 0 14px; font-size: 52px; letter-spacing: -.02em; line-height: 1; }
+  .hero h1 span { color: var(--purple-soft); }
+  .hero p { margin: 0; color: #9aa4c4; font-size: 16px; max-width: 520px; }
+
+  /* cards */
+  .card {
+    margin-top: 22px; border: 1px solid var(--card-border); border-radius: 22px;
+    background: var(--card); padding: 30px 30px 32px;
+  }
+  .step {
+    width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center;
+    font-family: var(--mono); font-weight: 700; font-size: 16px; margin-bottom: 18px;
+  }
+  .step.s1 { border: 2px solid var(--cyan); color: var(--cyan); }
+  .step.s2 { border: 2px solid var(--purple); color: var(--purple-soft); }
+  .kicker { font-size: 12px; font-weight: 700; letter-spacing: .14em; margin-bottom: 8px; }
+  .s1k { color: var(--cyan); } .s2k { color: var(--purple-soft); }
+  h2 { margin: 0 0 10px; font-size: 26px; letter-spacing: -.01em; }
+  .sub { color: var(--muted); margin: 0 0 24px; font-size: 15px; max-width: 560px; }
+
+  button {
+    font-family: inherit; font-size: 14px; font-weight: 700; letter-spacing: .08em;
+    border: 0; border-radius: 12px; padding: 15px 26px; color: #fff; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    transition: transform .15s, box-shadow .15s, opacity .15s;
+  }
+  button:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--purple-soft); outline-offset: 3px; }
+  button:disabled { opacity: .55; cursor: not-allowed; }
+  .btn-ingest { background: linear-gradient(90deg, #06b6d4, #0ea5c9); box-shadow: 0 6px 22px rgba(6,182,212,.3); }
+  .btn-ask { width: 100%; background: linear-gradient(90deg, #7c3aed, #6d28d9); box-shadow: 0 6px 22px rgba(124,58,237,.35); }
+  button:not(:disabled):hover { transform: translateY(-1px); }
+
+  .stat {
+    margin-top: 26px; border: 1px solid var(--card-border); border-radius: 16px; padding: 22px 24px;
+    background: rgba(255,255,255,.015);
+  }
+  .stat small { color: var(--muted); font-size: 13px; }
+  .stat .num { font-size: 40px; font-weight: 700; margin: 4px 0 10px; }
+  .state { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .state i { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+  .state.running { color: var(--amber); } .state.running i { background: var(--amber); animation: pulse 1s infinite; }
+  .state.ok { color: var(--green); }
+  .state.error { color: var(--red); } .state.error i { background: var(--red); }
+  .chips { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+  .chips span {
+    font-family: var(--mono); font-size: 11px; font-weight: 700; color: #aab3d0;
+    border: 1px solid var(--card-border); border-radius: 8px; padding: 5px 10px; background: #0f1630;
+  }
+
+  .field {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    border: 1px solid var(--card-border); border-radius: 14px; padding: 4px 16px;
+    background: #0a0f20; margin-bottom: 14px;
+  }
+  .field:focus-within { border-color: var(--purple); }
+  .field svg { flex: none; color: var(--muted); }
+  .field input {
+    flex: 1; min-width: 0; background: transparent; border: 0; outline: 0;
+    color: var(--text); font-family: inherit; font-size: 15px; padding: 15px 0;
+  }
+  .field input::placeholder { color: #55607f; }
+
+  .answer {
+    margin-top: 24px; border: 1px dashed #28325a; border-radius: 16px; padding: 20px 22px;
+    color: var(--muted); font-size: 14px;
+  }
+  .answer.filled { border-style: solid; border-color: #2c3770; background: rgba(124,58,237,.06); color: var(--text); }
+  .answer.err { border-color: #5b2a33; background: rgba(248,113,113,.06); color: #fca5a5; }
+  .answer .label { font-size: 12px; font-weight: 700; letter-spacing: .12em; color: var(--purple-soft); margin-bottom: 8px; }
+  .answer .text { font-size: 16px; white-space: pre-wrap; word-break: break-word; }
+  .sources { margin-top: 16px; font-size: 13px; color: var(--muted); }
+  .sources b { color: #aab3d0; }
+  .sources code {
+    display: inline-block; font-family: var(--mono); font-size: 12px; color: var(--cyan);
+    background: #0f1630; border: 1px solid var(--card-border); border-radius: 8px; padding: 3px 9px; margin: 4px 6px 0 0;
+  }
+  details { margin-top: 14px; }
+  summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+  .ctx { margin-top: 10px; padding: 12px 14px; border-radius: 10px; background: #0a0f20; border: 1px solid var(--card-border); font-size: 13px; color: #aab3d0; white-space: pre-wrap; word-break: break-word; }
+  .meta { margin-top: 10px; font-size: 12px; color: #55607f; }
+
+  footer { text-align: center; color: #4a5373; font-size: 12px; margin-top: 34px; line-height: 1.9; }
+
+  @media (max-width: 560px) {
+    .hero { padding: 28px 22px; } .hero h1 { font-size: 40px; }
+    .card { padding: 24px 20px; }
+    .btn-ingest { width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="brand"><div class="logo" aria-hidden="true">⚡</div>Lucent</div>
+    <div class="badge" id="badge" role="status" aria-live="polite"><i></i><span id="badgeText">IDLE</span></div>
+  </div>
+
+  <section class="hero">
+    <h1>Lu<span>cent</span></h1>
+    <p>Lucent is a company knowledge assistant.<br>Ask a question and get accurate answers sourced directly from your documents.</p>
+  </section>
+
+  <section class="card">
+    <div class="step s1">01</div>
+    <div class="kicker s1k">DOCUMENT INGESTION</div>
+    <h2>Load your company documents</h2>
+    <p class="sub">Index all company documents into the vector database. Run once, or again after adding new files to the data folder.</p>
+    <button class="btn-ingest" id="ingestBtn" type="button">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
+      <span id="ingestLabel">INGEST DATA</span>
+    </button>
+    <div class="stat">
+      <small>Chunks indexed</small>
+      <div class="num" id="chunks">–</div>
+      <div class="state" id="state"><i></i><span id="stateText">Checking status…</span></div>
+      <div class="chips"><span>PDF</span><span>DOCX</span><span>TXT</span><span>MD</span></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="step s2">02</div>
+    <div class="kicker s2k">ASK A QUESTION</div>
+    <h2>Get answers from your documents</h2>
+    <p class="sub">Ask about policies, handbooks, expenses or benefits. Every answer comes from your documents and lists its sources.</p>
+    <div class="field">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <input id="q" type="text" autocomplete="off" aria-label="Your question"
+             placeholder="e.g. What is the daily meal reimbursement limit for international travel?">
+    </div>
+    <button class="btn-ask" id="askBtn" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+      <span id="askLabel">ASK</span>
+    </button>
+    <div class="answer" id="answer">Your answer will appear here. Type a question above and click Ask.</div>
+  </section>
+
+  <footer>Lucent · LangChain · pgvector · HuggingFace · Gemini · Cohere Rerank<br>github.com/raghav-010</footer>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var badge = $("badge"), badgeText = $("badgeText");
+  var chunksEl = $("chunks"), state = $("state"), stateText = $("stateText");
+  var ingestBtn = $("ingestBtn"), ingestLabel = $("ingestLabel");
+  var askBtn = $("askBtn"), askLabel = $("askLabel"), qEl = $("q"), answerEl = $("answer");
+  var pollTimer = null;
+
+  function setBadge(kind, text) { badge.className = "badge " + kind; badgeText.textContent = text; }
+  function setState(kind, text) { state.className = "state " + kind; stateText.textContent = text; }
+
+  // Read the body as text first, so a server error page never crashes the UI with a JSON parse error.
+  async function request(url, options) {
+    var res = await fetch(url, options);
+    var raw = await res.text();
+    var data = null;
+    try { data = JSON.parse(raw); } catch (e) {}
+    return { ok: res.ok, status: res.status, data: data, raw: raw };
+  }
+
+  function applyStatus(s) {
+    if (!s) return;
+    if (s.status === "running") {
+      setBadge("running", "INGESTING"); setState("running", "Indexing documents…");
+      ingestBtn.disabled = true; ingestLabel.textContent = "INGESTING…";
+    } else if (s.status === "succeeded") {
+      stopPolling();
+      var n = s.stats && s.stats.chunks != null ? s.stats.chunks : null;
+      if (n != null) chunksEl.textContent = n;
+      setBadge("ready", "READY"); setState("ok", "Succeeded. Ready to answer questions.");
+      ingestBtn.disabled = false; ingestLabel.textContent = "INGEST DATA";
+    } else if (s.status === "failed") {
+      stopPolling();
+      setBadge("error", "ERROR"); setState("error", "Ingestion failed: " + (s.error || "see server logs"));
+      ingestBtn.disabled = false; ingestLabel.textContent = "INGEST DATA";
+    } else {
+      setBadge("", "IDLE"); setState("ok", "Ready for indexing");
+      ingestBtn.disabled = false; ingestLabel.textContent = "INGEST DATA";
+    }
+  }
+
+  async function fetchStatus() {
+    try {
+      var r = await request("/ingest/status");
+      if (r.data) applyStatus(r.data);
+    } catch (e) {
+      stopPolling();
+      setBadge("error", "OFFLINE"); setState("error", "Cannot reach the server. Check that Docker is running.");
+    }
+  }
+  function startPolling() { stopPolling(); pollTimer = setInterval(fetchStatus, 1500); }
+  function stopPolling() { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
+
+  ingestBtn.addEventListener("click", async function () {
+    ingestBtn.disabled = true;
+    try {
+      var r = await request("/ingest", { method: "POST" });
+      // 409 means a run is already in progress, so just follow it
+      if (!r.ok && r.status !== 409) {
+        setBadge("error", "ERROR"); setState("error", "Could not start ingestion (HTTP " + r.status + ").");
+        ingestBtn.disabled = false; return;
+      }
+      applyStatus({ status: "running" });
+      startPolling();
+    } catch (e) {
+      setBadge("error", "OFFLINE"); setState("error", "Cannot reach the server. Check that Docker is running.");
+      ingestBtn.disabled = false;
+    }
+  });
+
+  function renderAnswer(d, secs) {
+    answerEl.className = "answer filled";
+    answerEl.innerHTML = "";
+    var label = document.createElement("div"); label.className = "label"; label.textContent = "ANSWER";
+    var text = document.createElement("div"); text.className = "text"; text.textContent = d.answer || "No answer returned.";
+    answerEl.appendChild(label); answerEl.appendChild(text);
+
+    if (d.sources && d.sources.length) {
+      var src = document.createElement("div"); src.className = "sources";
+      var b = document.createElement("b"); b.textContent = "Sources"; src.appendChild(b);
+      src.appendChild(document.createElement("br"));
+      d.sources.forEach(function (s) { var c = document.createElement("code"); c.textContent = s; src.appendChild(c); });
+      answerEl.appendChild(src);
+    }
+    if (d.contexts && d.contexts.length) {
+      var det = document.createElement("details");
+      var sum = document.createElement("summary"); sum.textContent = "Show retrieved passages (" + d.contexts.length + ")";
+      det.appendChild(sum);
+      d.contexts.forEach(function (c) { var p = document.createElement("div"); p.className = "ctx"; p.textContent = c; det.appendChild(p); });
+      answerEl.appendChild(det);
+    }
+    var meta = document.createElement("div"); meta.className = "meta"; meta.textContent = "Answered in " + secs + "s";
+    answerEl.appendChild(meta);
+  }
+
+  function renderError(msg) {
+    answerEl.className = "answer err";
+    answerEl.textContent = msg;
+  }
+
+  async function ask() {
+    var question = qEl.value.trim();
+    if (!question) { qEl.focus(); return; }
+    askBtn.disabled = true; askLabel.textContent = "THINKING…";
+    answerEl.className = "answer"; answerEl.textContent = "Searching your documents…";
+    var t0 = performance.now();
+    try {
+      var r = await request("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: question })
+      });
+      var secs = ((performance.now() - t0) / 1000).toFixed(1);
+      if (r.ok && r.data) {
+        renderAnswer(r.data, secs);
+      } else {
+        renderError("The server could not answer (HTTP " + r.status + "). Run docker compose logs app --tail=50 to see the exact error.");
+      }
+    } catch (e) {
+      renderError("Cannot reach the server. Check that Docker is running and open http://localhost:8000.");
+    } finally {
+      askBtn.disabled = false; askLabel.textContent = "ASK";
+    }
+  }
+  askBtn.addEventListener("click", ask);
+  qEl.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); ask(); } });
+
+  // Show the real current state on page load (for example after a refresh)
+  fetchStatus();
+})();
+</script>
+</body>
+</html>
