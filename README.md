@@ -1,25 +1,21 @@
-# Company Knowledge Assistant (CKA)
+# Company Knowledge Assistant
 
-A production-style **Retrieval-Augmented Generation (RAG)** system that lets employees ask natural-language questions about company documents and get grounded, cited answers.
+A production-style **Retrieval-Augmented Generation (RAG)** system that answers employee questions grounded strictly in company documents — with cited sources and zero hallucination.
 
-> Built by **Raghav Balaji V** as Project #9 in my data science journey (April 2026 → present).  
-> Portfolio: [raghav-010.github.io](https://raghav-010.github.io) | LinkedIn: [raghavbalaji010](https://linkedin.com/in/raghavbalaji010)
+Built with LangChain, HuggingFace, Gemini, Cohere, PostgreSQL + pgvector, FastAPI, and Docker.
 
----
-
-## What it does
-
-Upload company documents (PDFs, Word docs, Markdown, text files) and ask questions like:
-
-- *"How many PTO days can I carry forward?"*
-- *"What is the daily meal reimbursement limit when traveling internationally?"*
-- *"What is the remote work policy?"*
-
-The system retrieves the most relevant chunks from the document store, reranks them for precision, and generates a grounded answer — refusing to hallucinate if the answer isn't in the docs.
+**Live demo:** Run locally with one command (see Quick Start below).  
+**Author:** Raghav Balaji V — [raghav-010.github.io](https://raghav-010.github.io) · [LinkedIn](https://linkedin.com/in/raghavbalaji010) · [GitHub](https://github.com/raghav-010)
 
 ---
 
-## Architecture
+## Problem
+
+Employees waste time searching through PDFs, handbooks, and policy documents to find answers to routine questions. This system ingests those documents once and lets anyone ask questions in plain English — returning precise, sourced answers in under 10 seconds.
+
+---
+
+## How it works
 
 ```
 User Question
@@ -28,34 +24,51 @@ User Question
 FastAPI /ask endpoint
       │
       ▼
-pgvector similarity search (top-5 chunks)
-[HuggingFace all-MiniLM-L6-v2 embeddings, 384-dim]
+pgvector similarity search
+HuggingFace all-MiniLM-L6-v2 embeddings · 384-dim · HNSW index
+Retrieves top-5 semantically similar chunks
       │
       ▼
 Cohere Reranking (rerank-multilingual-v3.0)
-→ keeps top-3 most relevant chunks
+Cross-encoder re-scores chunks by relevance → keeps top-3
       │
       ▼
-Gemini 2.5 Flash (LLM)
-→ generates answer grounded in context
-→ says "I don't know" if answer not in docs
+Google Gemini (LLM)
+Generates grounded answer from context
+Returns "I don't know" if answer not in documents
       │
       ▼
-Response: { answer, sources, contexts }
+{ answer, sources, contexts }
 ```
 
-**Stack:**
+---
 
-| Component | Technology | Why |
-|-----------|-----------|-----|
-| Embeddings | HuggingFace `all-MiniLM-L6-v2` | Runs locally in Docker, 100% free. OpenAI embeddings require international USD card payment not available with Indian cards. 384-dim vectors, sufficient for this project. |
-| Vector DB | PostgreSQL + pgvector | Already in the stack — no extra service. HNSW index for fast approximate nearest-neighbour search. |
-| Reranking | Cohere `rerank-multilingual-v3.0` | Cross-encoder re-scores top-5 chunks by semantic relevance → keeps top-3. Improves answer precision significantly over raw cosine similarity. |
-| LLM | Google Gemini 2.5 Flash | Free tier via Google AI Studio. Replaced GPT-4o-mini (OpenAI account needed USD top-up, Indian card unsupported). Same quality for this use case. |
-| API | FastAPI + Uvicorn | Async, lightweight, auto-generates `/docs` UI. |
-| Observability | LangSmith | Traces every run: question, retrieved chunks, prompt, answer, latency. |
-| Evaluation | RAGAS | Measures faithfulness, answer relevancy, context precision, context recall. |
-| Containerisation | Docker + Docker Compose | Reproducible environment, one-command startup. |
+## Stack
+
+| Layer | Technology | Decision |
+|-------|-----------|----------|
+| Embeddings | HuggingFace `all-MiniLM-L6-v2` | Runs locally inside Docker — no API cost, no external dependency. 384-dim vectors. |
+| Vector store | PostgreSQL + pgvector | Single stack, no extra managed service. HNSW index for O(log n) ANN search. |
+| Reranking | Cohere `rerank-multilingual-v3.0` | Cross-encoder precision over cosine similarity. Top-5 → top-3 by true relevance. |
+| LLM | Google Gemini Flash | Fast, free tier via Google AI Studio. Grounded generation with strict system prompt. |
+| API | FastAPI + Uvicorn | Async, auto-documented, production-ready. |
+| Observability | LangSmith | Full trace per request: question, chunks, prompt, answer, latency. |
+| Evaluation | RAGAS | Faithfulness, answer relevancy, context precision, context recall. |
+| Infrastructure | Docker + Docker Compose | One-command reproducible environment. |
+
+---
+
+## Features
+
+- **Multi-format ingestion** — PDF, DOCX, Markdown, plain text
+- **Category-aware retrieval** — documents organised by subfolder (policies, faqs, guides, handbooks, announcements)
+- **Cohere reranking** — improves answer quality beyond raw vector similarity
+- **Hallucination guard** — LLM instructed to say "I don't know" if answer not in context
+- **Source citations** — every answer shows which document it came from
+- **HNSW index** — approximate nearest-neighbour search, production-correct choice
+- **LangSmith tracing** — full observability on every query
+- **RAGAS evaluation** — automated quality scoring on a test set
+- **Clean UI** — Lucent interface, dark theme, runs in the browser at `localhost:8000`
 
 ---
 
@@ -65,27 +78,26 @@ Response: { answer, sources, contexts }
 company-knowledge-assistant/
 ├── app/
 │   ├── api.py          # FastAPI: GET /, POST /ingest, GET /ingest/status, POST /ask
-│   ├── ingest.py       # Document loading → chunking → pgvector storage → HNSW index
-│   ├── rag.py          # RAG chain: retrieval → Cohere reranking → Gemini answer
-│   ├── utils.py        # Shared: PGEngine, HuggingFace embeddings, vector store
-│   ├── eval_ragas.py   # RAGAS evaluation script (run separately)
-│   └── static/         # Frontend UI (HTML + CSS)
-├── data/               # Company documents (subfolders = categories)
+│   ├── ingest.py       # Document loading → chunking → pgvector → HNSW index
+│   ├── rag.py          # Retrieval → Cohere reranking → Gemini answer generation
+│   ├── utils.py        # PGEngine, HuggingFace embeddings, vector store
+│   ├── eval_ragas.py   # RAGAS evaluation (run separately)
+│   └── static/         # Lucent UI (HTML + CSS)
+├── data/
 │   ├── announcements/
 │   ├── faqs/
 │   ├── guides/
 │   ├── handbooks/
 │   └── policies/
 ├── init-db/
-│   └── init.sql        # Creates pgvector extension + embeddings table (384-dim)
+│   └── init.sql        # pgvector extension + embeddings table (vector 384)
 ├── seed/
 │   └── qna_test.json   # Test Q&A pairs for RAGAS evaluation
-├── .env.example        # Environment variable template (copy to .env)
+├── .env.example
 ├── .gitignore
 ├── docker-compose.yml
 ├── Dockerfile
-├── requirements.txt
-└── README.md
+└── requirements.txt
 ```
 
 ---
@@ -93,9 +105,9 @@ company-knowledge-assistant/
 ## Quick start
 
 ### Prerequisites
-- Docker Desktop installed and running
-- A Google AI Studio API key (free at [aistudio.google.com/apikey](https://aistudio.google.com/apikey))
-- A Cohere API key (free at [dashboard.cohere.com](https://dashboard.cohere.com))
+- Docker Desktop
+- Google AI Studio API key (free — [aistudio.google.com/apikey](https://aistudio.google.com/apikey))
+- Cohere API key (free — [dashboard.cohere.com](https://dashboard.cohere.com))
 
 ### 1. Clone and configure
 
@@ -103,40 +115,29 @@ company-knowledge-assistant/
 git clone https://github.com/raghav-010/company-knowledge-assistant.git
 cd company-knowledge-assistant
 cp .env.example .env
-# Edit .env and fill in your GOOGLE_API_KEY and CO_API_KEY
+# Open .env and fill in GOOGLE_API_KEY and CO_API_KEY
 ```
 
-### 2. Start containers
+### 2. Start
 
 ```bash
 docker compose up --build -d
 ```
 
-First build takes ~20 minutes (downloads Python packages and HuggingFace model weights).  
-Subsequent starts take seconds.
+First build downloads model weights (~20 min one-time). Subsequent starts take seconds.
 
-**Wait for the app to be ready:**
 ```bash
 docker compose logs app --tail=20
-# Look for: "Application startup complete."
+# Wait for: "Application startup complete."
 ```
 
-### 3. Ingest documents
+### 3. Ingest your documents
 
-Open [http://localhost:8000](http://localhost:8000) and click **Ingest Data**.  
-Or via API:
-```bash
-curl -X POST http://localhost:8000/ingest
-```
-
-Check progress:
-```bash
-curl http://localhost:8000/ingest/status
-```
+Open [http://localhost:8000](http://localhost:8000) and click **Ingest Data**.
 
 ### 4. Ask questions
 
-Via the UI at [http://localhost:8000](http://localhost:8000), or:
+Use the UI at [http://localhost:8000](http://localhost:8000) or via API:
 
 ```bash
 curl -X POST http://localhost:8000/ask \
@@ -144,30 +145,21 @@ curl -X POST http://localhost:8000/ask \
   -d '{"question": "What is the daily meal reimbursement limit for international travel?"}'
 ```
 
+**Response:**
+```json
+{
+  "answer": "The daily meal reimbursement limit for international travel is US $60 per day (receipts required).",
+  "sources": ["data/faqs/travel-faq.txt"],
+  "contexts": ["...retrieved passage..."]
+}
+```
+
 ### 5. Stop
 
 ```bash
-docker compose down          # Stops containers, data preserved
-docker compose down -v       # Stops + DELETES all ingested data
+docker compose down        # Stops containers, data preserved
+docker compose down -v     # Stops and deletes all ingested data
 ```
-
----
-
-## Adding your own documents
-
-Drop files into the appropriate `data/` subfolder:
-
-```
-data/policies/     → HR policies, expense policies
-data/guides/       → How-to guides, setup instructions
-data/handbooks/    → Employee handbook
-data/faqs/         → FAQ documents
-data/announcements/ → Company announcements
-```
-
-Supported formats: `.pdf`, `.docx`, `.md`, `.txt`
-
-Then re-ingest via the UI or `POST /ingest`.
 
 ---
 
@@ -175,78 +167,72 @@ Then re-ingest via the UI or `POST /ingest`.
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/` | GET | Frontend UI |
-| `/ingest` | POST | Start document ingestion |
-| `/ingest/status` | GET | Check ingest progress |
-| `/ask` | POST | Ask a question |
-| `/docs` | GET | Auto-generated FastAPI docs |
+| `/` | GET | Lucent UI |
+| `/ingest` | POST | Start document ingestion (async background task) |
+| `/ingest/status` | GET | Poll ingestion progress |
+| `/ask` | POST | Ask a natural-language question |
+| `/docs` | GET | Auto-generated FastAPI interactive docs |
 
-**POST /ask request body:**
-```json
-{ "question": "How many PTO days can I carry forward?" }
+---
+
+## Adding your own documents
+
+Drop files into the appropriate `data/` subfolder and re-ingest:
+
+```
+data/policies/      → HR policies, expense policies
+data/guides/        → How-to guides, setup docs
+data/handbooks/     → Employee handbook
+data/faqs/          → FAQ documents
+data/announcements/ → Company announcements
 ```
 
-**POST /ask response:**
-```json
-{
-  "answer": "You can carry forward a maximum of 6 PTO days to the next year.",
-  "sources": ["data/policies/PTO Policy.pdf"],
-  "contexts": ["...relevant chunk text..."]
-}
-```
+Supported: `.pdf` `.docx` `.md` `.txt`
 
 ---
 
 ## Running RAGAS evaluation
 
-With Docker running and documents ingested:
-
 ```bash
 docker compose exec app python -m app.eval_ragas
 ```
 
-Outputs 4 metrics averaged across the test set in `seed/qna_test.json`:
-- **faithfulness** — answer grounded in retrieved context?
-- **answer_relevancy** — answer addresses the question?
-- **context_precision** — retrieved chunks relevant to the question?
-- **context_recall** — retrieved context covers the reference answer?
+Outputs four metrics averaged across `seed/qna_test.json`:
+
+| Metric | What it measures |
+|--------|-----------------|
+| Faithfulness | Is the answer grounded in the retrieved context? |
+| Answer relevancy | Does the answer address the question asked? |
+| Context precision | Are the retrieved chunks relevant to the question? |
+| Context recall | Does the context cover the reference answer? |
 
 ---
 
-## Key design decisions
+## Design decisions
 
-**Why HuggingFace instead of OpenAI embeddings?**  
-OpenAI API requires a credit card that supports international USD payments. My Indian card does not support this. `all-MiniLM-L6-v2` runs locally inside the Docker container — completely free, no API key needed. Trade-off: 384-dim vectors instead of 1536-dim, which is fine for this project's document size.
+**HuggingFace over OpenAI embeddings** — `all-MiniLM-L6-v2` runs entirely inside the Docker container with no external API call and no cost. 384-dim vectors are sufficient for this document scale.
 
-**Why Gemini instead of GPT-4o-mini?**  
-OpenAI account had zero credits and Indian card cannot top up in USD. Gemini free tier works with any Google account via AI Studio. Same response quality for grounded Q&A.
+**Cohere reranking** — vector cosine similarity finds chunks that are broadly similar; a cross-encoder reranker finds chunks that are specifically relevant to the question. The two-stage approach (retrieve 5, rerank to 3) measurably improves answer quality.
 
-**Why Cohere reranking?**  
-pgvector's cosine similarity returns the top-K most similar chunks by vector distance — but "similar" isn't always "relevant." A Cohere cross-encoder re-scores them by actual semantic relevance to the question and keeps only the top-3. This measurably improves answer quality.
+**PostgreSQL + pgvector over Pinecone or Chroma** — pgvector is already part of the Docker Compose stack. No extra managed service, no extra API key, same vector search capability at this scale.
 
-**Why HNSW index?**  
-Brute-force vector search is O(n). HNSW gives O(log n) approximate nearest-neighbour search with ~99% recall. At ingestion size this doesn't matter, but it's the production-correct choice.
+**HNSW index** — O(log n) approximate nearest-neighbour search versus brute-force O(n). Production-correct choice from day one.
 
-**Why PostgreSQL + pgvector instead of Pinecone/Chroma?**  
-pgvector is already part of the stack (Docker Compose). No extra managed service, no extra cost, no extra API key. Same vector search capability for this scale.
+**Strict system prompt** — the LLM is instructed to answer only from provided context and return "I don't know" otherwise. This eliminates hallucination at the cost of occasional non-answers when relevant content is missing from the document store.
 
 ---
 
-## What's next
+## Roadmap
 
-- [ ] Add Redis semantic caching (reduces repeat query cost and latency)
-- [ ] Implement metadata filtering UI (let users select document category)
-- [ ] Swap in personal documents (certificates, notes) and re-ingest
-- [ ] Deploy to a live URL (Railway / Render / fly.io)
+- [ ] Redis semantic caching — reduce latency on repeated questions
+- [ ] Metadata filtering UI — let users scope queries to a specific document category
+- [ ] Public deployment — Railway / Render / fly.io
+- [ ] Swap in domain-specific documents and re-evaluate with RAGAS
 
 ---
 
 ## Related projects
 
-- [Customer Churn Prediction](https://github.com/raghav-010/churn-prediction) — Live Streamlit ML app
-- [Retail Customer Behaviour Insights](https://github.com/raghav-010/retail-behaviour-insights) — Python + PostgreSQL + Power BI
-- [Zoho Invoice Classifier](https://github.com/raghav-010/zoho-invoice-classifier) — ETL automation
-
----
-
-*Built as part of my learning journey: Data Analyst → Data Scientist → ML Engineer → AI Engineer → own AI startup (2028+)*
+- [Customer Churn Prediction](https://github.com/raghav-010/churn-prediction) — Live ML app (Streamlit, Scikit-learn, SMOTE)
+- [Retail Customer Behaviour Insights](https://github.com/raghav-010/retail-behaviour-insights) — PostgreSQL + Power BI + RFM segmentation
+- [Zoho Invoice Classifier](https://github.com/raghav-010/zoho-invoice-classifier) — Python ETL automation
