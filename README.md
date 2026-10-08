@@ -1,11 +1,15 @@
 # Company Knowledge Assistant
 
-A production-style **Retrieval-Augmented Generation (RAG)** system that answers employee questions grounded strictly in company documents — with cited sources and zero hallucination.
+> A production-style **Retrieval-Augmented Generation (RAG)** system that answers employee questions grounded strictly in company documents — with cited sources and zero hallucination.
 
-Built with LangChain, HuggingFace, Gemini, Cohere, PostgreSQL + pgvector, FastAPI, and Docker.
-
-**Live demo:** Run locally with one command (see Quick Start below).  
-**Author:** Raghav Balaji V — [raghav-010.github.io](https://raghav-010.github.io) · [LinkedIn](https://linkedin.com/in/raghavbalaji010) · [GitHub](https://github.com/raghav-010)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![LangChain](https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge&logo=chainlink&logoColor=white)
+![HuggingFace](https://img.shields.io/badge/HuggingFace-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)
+![Google Gemini](https://img.shields.io/badge/Gemini-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white)
+![Cohere](https://img.shields.io/badge/Cohere-39594E?style=for-the-badge&logo=cohere&logoColor=white)
 
 ---
 
@@ -25,7 +29,7 @@ FastAPI /ask endpoint
       │
       ▼
 pgvector similarity search
-HuggingFace all-MiniLM-L6-v2 embeddings · 384-dim · HNSW index
+HuggingFace all-MiniLM-L6-v2 · 384-dim · HNSW index
 Retrieves top-5 semantically similar chunks
       │
       ▼
@@ -47,14 +51,14 @@ Returns "I don't know" if answer not in documents
 
 | Layer | Technology | Decision |
 |-------|-----------|----------|
-| Embeddings | HuggingFace `all-MiniLM-L6-v2` | Runs locally inside Docker — no API cost, no external dependency. 384-dim vectors. |
-| Vector store | PostgreSQL + pgvector | Single stack, no extra managed service. HNSW index for O(log n) ANN search. |
-| Reranking | Cohere `rerank-multilingual-v3.0` | Cross-encoder precision over cosine similarity. Top-5 → top-3 by true relevance. |
-| LLM | Google Gemini Flash | Fast, free tier via Google AI Studio. Grounded generation with strict system prompt. |
-| API | FastAPI + Uvicorn | Async, auto-documented, production-ready. |
-| Observability | LangSmith | Full trace per request: question, chunks, prompt, answer, latency. |
-| Evaluation | RAGAS | Faithfulness, answer relevancy, context precision, context recall. |
-| Infrastructure | Docker + Docker Compose | One-command reproducible environment. |
+| 🤗 Embeddings | HuggingFace `all-MiniLM-L6-v2` | Runs locally inside Docker — no API cost, no external dependency. 384-dim vectors. |
+| 🗄️ Vector store | PostgreSQL + pgvector | Single stack, no extra managed service. HNSW index for O(log n) ANN search. |
+| 🔁 Reranking | Cohere `rerank-multilingual-v3.0` | Cross-encoder precision over cosine similarity. Top-5 → top-3 by true relevance. |
+| 🤖 LLM | Google Gemini Flash | Fast, free tier via Google AI Studio. Grounded generation with strict system prompt. |
+| ⚡ API | FastAPI + Uvicorn | Async, auto-documented, production-ready. |
+| 🔭 Observability | LangSmith | Full trace per request: question, chunks, prompt, answer, latency. |
+| 📊 Evaluation | RAGAS | Faithfulness, answer relevancy, context precision, context recall. |
+| 🐳 Infrastructure | Docker + Docker Compose | One-command reproducible environment. |
 
 ---
 
@@ -63,7 +67,7 @@ Returns "I don't know" if answer not in documents
 - **Multi-format ingestion** — PDF, DOCX, Markdown, plain text
 - **Category-aware retrieval** — documents organised by subfolder (policies, faqs, guides, handbooks, announcements)
 - **Cohere reranking** — improves answer quality beyond raw vector similarity
-- **Hallucination guard** — LLM instructed to say "I don't know" if answer not in context
+- **Hallucination guard** — LLM returns "I don't know" if answer not in context
 - **Source citations** — every answer shows which document it came from
 - **HNSW index** — approximate nearest-neighbour search, production-correct choice
 - **LangSmith tracing** — full observability on every query
@@ -106,8 +110,8 @@ company-knowledge-assistant/
 
 ### Prerequisites
 - Docker Desktop
-- Google AI Studio API key (free — [aistudio.google.com/apikey](https://aistudio.google.com/apikey))
-- Cohere API key (free — [dashboard.cohere.com](https://dashboard.cohere.com))
+- Google AI Studio API key — free at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+- Cohere API key — free at [dashboard.cohere.com](https://dashboard.cohere.com)
 
 ### 1. Clone and configure
 
@@ -124,14 +128,14 @@ cp .env.example .env
 docker compose up --build -d
 ```
 
-First build downloads model weights (~20 min one-time). Subsequent starts take seconds.
+First build downloads model weights (~20 min, one-time). Subsequent starts take seconds.
 
 ```bash
 docker compose logs app --tail=20
 # Wait for: "Application startup complete."
 ```
 
-### 3. Ingest your documents
+### 3. Ingest documents
 
 Open [http://localhost:8000](http://localhost:8000) and click **Ingest Data**.
 
@@ -180,11 +184,11 @@ docker compose down -v     # Stops and deletes all ingested data
 Drop files into the appropriate `data/` subfolder and re-ingest:
 
 ```
-data/policies/      → HR policies, expense policies
-data/guides/        → How-to guides, setup docs
-data/handbooks/     → Employee handbook
-data/faqs/          → FAQ documents
-data/announcements/ → Company announcements
+data/policies/       → HR policies, expense policies
+data/guides/         → How-to guides, setup docs
+data/handbooks/      → Employee handbook
+data/faqs/           → FAQ documents
+data/announcements/  → Company announcements
 ```
 
 Supported: `.pdf` `.docx` `.md` `.txt`
@@ -196,8 +200,6 @@ Supported: `.pdf` `.docx` `.md` `.txt`
 ```bash
 docker compose exec app python -m app.eval_ragas
 ```
-
-Outputs four metrics averaged across `seed/qna_test.json`:
 
 | Metric | What it measures |
 |--------|-----------------|
@@ -225,14 +227,6 @@ Outputs four metrics averaged across `seed/qna_test.json`:
 ## Roadmap
 
 - [ ] Redis semantic caching — reduce latency on repeated questions
-- [ ] Metadata filtering UI — let users scope queries to a specific document category
+- [ ] Metadata filtering UI — scope queries to a specific document category
 - [ ] Public deployment — Railway / Render / fly.io
 - [ ] Swap in domain-specific documents and re-evaluate with RAGAS
-
----
-
-## Related projects
-
-- [Customer Churn Prediction](https://github.com/raghav-010/churn-prediction) — Live ML app (Streamlit, Scikit-learn, SMOTE)
-- [Retail Customer Behaviour Insights](https://github.com/raghav-010/retail-behaviour-insights) — PostgreSQL + Power BI + RFM segmentation
-- [Zoho Invoice Classifier](https://github.com/raghav-010/zoho-invoice-classifier) — Python ETL automation
